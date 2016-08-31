@@ -6,6 +6,11 @@ import requests
 import six
 import time
 
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+import ssl
+
+
 try:
     from urllib.parse import quote
 except ImportError:
@@ -23,6 +28,13 @@ class AsanaException(Exception):
     """Wrap api specific errors"""
     pass
 
+class AsanaHTTPAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
+        self.poolmanager = PoolManager(num_pools=connections,
+                                       maxsize=maxsize,
+                                       block=block,
+                                       ssl_version=ssl.PROTOCOL_SSLv2, **kwargs)
+
 
 class AsanaAPI(object):
     """Basic wrapper for the Asana api. For further information on the API
@@ -36,6 +48,8 @@ class AsanaAPI(object):
         self.aurl = "/".join([self.asana_url, self.api_version])
         self.apikey = apikey
         self.bauth = self.get_basic_auth()
+        self.session = requests.Session()
+        self.session.mount('https://app.asana.com', AsanaHTTPAdapter())
 
     def get_basic_auth(self):
         """Get basic auth creds
@@ -81,7 +95,7 @@ class AsanaAPI(object):
         target = "/".join([self.aurl, quote(api_target, safe="/&=?")])
         if self.debug:
             print("-> Calling: {0}".format(target))
-        r = requests.get(target, auth=(self.apikey, ""))
+        r = self.session.get(target, auth=(self.apikey, ""))
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 if hasattr(r, 'text'):
@@ -105,7 +119,7 @@ class AsanaAPI(object):
         target = "/".join([self.aurl, quote(api_target, safe="/&=?")])
         if self.debug:
             print("-> Calling: {0}".format(target))
-        r = requests.delete(target, auth=(self.apikey, ""))
+        r = self.session.delete(target, auth=(self.apikey, ""))
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 if hasattr(r, 'text'):
@@ -137,7 +151,7 @@ class AsanaAPI(object):
             if files:
                 print("-> Posting file:")
                 pprint(files)
-        r = requests.post(
+        r = self.session.post(
             target, auth=(self.apikey, ""), data=data, files=files)
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
@@ -165,7 +179,7 @@ class AsanaAPI(object):
             print("-> PUTting to: {0}".format(target))
             print("-> PUT payload:")
             pprint(data)
-        r = requests.put(target, auth=(self.apikey, ""), data=data)
+        r = self.session.put(target, auth=(self.apikey, ""), data=data)
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 if hasattr(r, 'text'):
