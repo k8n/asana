@@ -73,7 +73,7 @@ class AsanaAPI(object):
             self._handle_rate_limit(r)
             return 1
         else:
-            raise AsanaException('Received non 2xx or 404 status code on call', r.response.headers)
+            raise AsanaException('Received non 2xx or 404 status code on call', r.headers)
 
     def _handle_rate_limit(self, r):
         """ Sleep for length of retry time
