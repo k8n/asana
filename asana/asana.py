@@ -49,7 +49,7 @@ class AsanaAPI(object):
         self.apikey = apikey
         self.bauth = self.get_basic_auth()
         self.session = requests.Session()
-        # self.session.mount('https://app.asana.com', AsanaHTTPAdapter())
+        self.session.mount('https://app.asana.com', AsanaHTTPAdapter())
 
     def get_basic_auth(self):
         """Get basic auth creds
