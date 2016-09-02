@@ -49,7 +49,7 @@ class AsanaAPI(object):
         self.apikey = apikey
         self.bauth = self.get_basic_auth()
         self.session = requests.Session()
-        self.session.mount('https://app.asana.com', AsanaHTTPAdapter())
+        # self.session.mount('https://app.asana.com', AsanaHTTPAdapter())
 
     def get_basic_auth(self):
         """Get basic auth creds
@@ -73,7 +73,7 @@ class AsanaAPI(object):
             self._handle_rate_limit(r)
             return 1
         else:
-            raise AsanaException('Received non 2xx or 404 status code on call')
+            raise AsanaException('Received non 2xx or 404 status code on call', r.response.headers)
 
     def _handle_rate_limit(self, r):
         """ Sleep for length of retry time
